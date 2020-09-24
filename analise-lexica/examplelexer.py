@@ -1,12 +1,14 @@
 # ------------------------------------------------------------
 # Dragon book - Exercise 3.5.1 
 # ------------------------------------------------------------
+import re
 import ply.lex as lex
 
 reserved = {
     'if' : 'IF',
     'then' : 'THEN',
-    'else' : 'ELSE'
+    'else' : 'ELSE',
+    'while': 'WHILE'
 }
 
 # List of token names.   This is always required
@@ -19,7 +21,8 @@ tokens = [
     'GT',
     'ID',
     'NUMBER',
-    'RELOP'
+    'RELOP',
+    'STRING'
 ] + list(reserved.values())
 
 # A string containing ignored characters (spaces, tabs and newline)
@@ -56,13 +59,22 @@ def t_GT(t):
     return t
 
 def t_EQ(t):
-    r'='
+    r'=='
     t.type = 'RELOP'
     t.value = 'EQ'
     return t
 
+def t_STRING(t):
+    r'".*"'
+    t.type = 'STRING'
+
+    value = re.sub(r'\\"', '"', t.value) # replace \" to "
+    value = re.sub(r'\\\\', '\\\\', value) # replace \\ to \
+    t.value = value
+    return t
+
 def t_ID(t):
-    r'[a-zA-Z][a-zA-Z0-9]*'
+    r'([a-zA-Z]|_)([a-zA-Z0-9]|_)*'
     t.type = reserved.get(t.value,'ID') # Check for reserved words
     return t
 
