@@ -11,22 +11,23 @@ tokens = [
 ] 
 
 def t_TIMESTAMP(t):
-    # Regular expression for TIMESTAMP
+    r'\d{2}:\d{2}:\d{2}.\d{6}\s-\d{4}'
+    t.type = 'TIMESTAMP'
     return t
 
 def t_PROC(t):
-    # Regular expression for PROC
+    r'\t.*\t'
+    t.type = 'PROC'
     t.value = t.value[1:len(t.value) - 1]
     return t
 
 def t_MESSAGE(t):
-    # Regular expression for MESSAGE
-    t.value = t.value[:len(t.value) - 1]
+    r'.+'
+    t.type = 'MESSAGE'
     return t
 
 # Error handling rule
 def t_error(t):
-    print("Illegal character '%s'" % t.value[0])
     t.lexer.skip(1)
 
 
@@ -41,7 +42,16 @@ class LogProcLexer:
         self.lexer.input(self.data)
 
     def collect_messages(self):
-        # Do your magic here
+        tokens = []
+        while True:
+            tok = self.lexer.token()
+            if not tok:
+                break
+            if tok.type == "PROC" and tok.value == "kernel":
+                tok_kernel_message = self.lexer.token()
+                tokens.append(tok_kernel_message)
+                
+        return tokens
         
 if __name__ == '__main__':
     print(LogProcLexer().collect_messages())
