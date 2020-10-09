@@ -82,18 +82,34 @@ class Grammar:
             x_1 = w[0]
             # "Add to FIRST(X_1 X_2 ... X_n) all non-epsilon symbols of
             # FIRST(X_1)."
-
-            ### Do your magic!
+            for s in self.first_tab[x_1]:
+                if s != "epsilon":
+                    first_w.add(s)
 
             # Also add the non-epsilon symbols of FIRST(X_2), if epsilon is in
             # FIRST(X_1), and so on until X_n.
 
-            ### Do your magic!
+            x_coringa = x_1
+            i_coringa = 0
+            while("epsilon" in x_coringa):
+                i_coringa += 1
+                if i_coringa == len(w):
+                    break
+                x_coringa = w[i_coringa]
+
+                for s in self.first_tab[x_coringa]:
+                    if s != "epsilon":
+                        first_w.add(s)
+            
             
             # Finally, add epsilon to FIRST(X_1 X_2 ... X_n) if for all i
             # epsilon \in FIRST(X_i).
-
-            ### Do your magic!
+            all_have_epsilon = True
+            for x in w:
+                if "epsilon" not in self.first_tab[x]:
+                    all_have_epsilon = False
+            if all_have_epsilon:
+                first_w.add("epsilon")
             
             return first_w
         else:
@@ -139,10 +155,11 @@ class Grammar:
                     # epsilon \in FISRT(y_j), for every 1 <= j <= i.
                     # However, we only reach j if every k 1 <= k < j
                     # has been reached before.
-
-                    ### Do your magic!
-
-                    
+                    if "epsilon" in self.first_tab[y_ant]:
+                        self.first_tab[s] = self.first_tab[s].union(self.first_tab[y_i])
+                    else:
+                        break
+            
             # If all symbols in the rhs derive epsilon, than epsilon
             # must be included in FIRST(s).
             add_epsilon = True
@@ -204,8 +221,12 @@ class Grammar:
         # apply the following rules until nothing can be
         # added to any FOLLOW set.
         while True:
-            ### Do your magic!
-            pass
+            old_follow = self.follow_tab.copy()
+            for s in self.getSymbols():
+                if s in self.non_terminals:
+                    self.follow(s)
+            if self.follow_tab == old_follow:
+                break
 
             
     def follow(self, s):
@@ -221,20 +242,21 @@ class Grammar:
                     if beta != ():
                         # If there is a production A -> alpha􏰐B beta then everything in
                         # FIRST(beta),􏰚except epsilon, is in FOLLOW(B).
+                        first_beta = self.first_tab[beta[0]]
+                        for y in first_beta:
+                            if y != "epsilon":
+                                self.follow_tab[B].add(y)
                         
-                        ### Do your magic!
-
                         # If there is a production A -> alpha B beta
                         # where FIRST(beta) contains epsilon, then FOLLOW(A) \subset FOLLOW(B) 􏰛􏰂
-
-                        ### Do your magic! 
-                        pass
+                        if "epsilon" in first_beta:
+                            self.follow_tab[B] = self.follow_tab[B].union(self.follow_tab[s])
+                        
                     else:
                         # If there is a production A -> alpha B
                         # then FOLLOW(A) \subset FOLLOW(B) 􏰛􏰂
-
-                        ### Do your magic!
-                        pass
+                        self.follow_tab[B] = self.follow_tab[B].union(self.follow_tab[s])
+                        
     def compute_pred_parsing_tab(self):
         '''
         Computes the predictive parsing table of a given grammar.
@@ -248,14 +270,19 @@ class Grammar:
                 # is in FOLLOW(A), add A -> alpha to M[A, $] as well.
                 if alpha == ("epsilon",) or \
                    (alpha != ("epsilon",) and ("epsilon" in self.firstW(alpha))):
-
-                    ### Do your magic!
+                   for b in self.follow_tab[A]:
+                        if b in self.terminals:
+                           self.pred_parsing_tab[A][b].append(A+" -> "+"".join(list(alpha)))
+                        if b == "$":
+                            self.pred_parsing_tab[A]["$"].append(A+" -> "+"".join(list(alpha)))
 
                 else:
                     # For each terminal a in FIRST(alpha), 
                     # add A -> alpha to M[A, a]
-
-                    ### Do your magic!
+                    first_alpha = self.firstW(alpha)
+                    for a in first_alpha:
+                        if a in self.terminals:
+                            self.pred_parsing_tab[A][a].append(A+" -> "+"".join(list(alpha)))
                     
     def print_pred_parsing_tab(self):
         # self.pp.pprint(self.pred_parsing_tab)
