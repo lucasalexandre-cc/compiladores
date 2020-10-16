@@ -35,8 +35,14 @@ def closure(s, g):
         new_items = set() 
         for lhs, rhs, dot_idx in clos:
             if dot_idx < len(rhs):
-                
-                # Do your magic here!
+                element = rhs[dot_idx]
+
+                productions = g.production_rules.get(element)
+                if productions:
+                    for production in productions:
+                        x = (element, production, 0)
+                        if x not in clos:
+                            new_items.add(x)
                 
         clos = clos.union(new_items)
         new_clos_size = len(clos)
@@ -51,9 +57,15 @@ def goto(s, x, g):
     '''
     goto_sx = set()
     for lhs, rhs, dot_idx in s:
+        if dot_idx < len(rhs):
+            if x == rhs[dot_idx]:
+                dot_position = rhs.index(x) + 1
+                singleton_set = {(lhs, rhs, dot_position)}
+                result = closure(singleton_set, g)
+                for r in result:
+                    goto_sx.add(r)
+    
 
-        # Do your magic here!
-        
     return goto_sx
 
 def augment(g):
@@ -89,10 +101,20 @@ def canonical_items(g):
     # each set of items I beig its position in the
     # list representing C.
     can = [closure({start_item}, g)]
+    all_symbles = g.getSymbols()
     while True:
         can_size = len(can)
-
-        # Do your magic here!
+        for item in can:
+            symbols = set()
+            for s in item:
+                idx = s[2]
+                if idx < len(s[1]):
+                    symbols.add(s[1][idx])
+            symbols = [x for x in all_symbles if x in symbols] #logic to get symbols in order
+            for symbol in symbols:
+                goto_result = goto(item, symbol, g)
+                if len(goto_result) > 0 and goto_result not in can:
+                    can.append(goto_result)
         
         new_can_size = len(can)
         if new_can_size == can_size:
@@ -124,6 +146,7 @@ def slr_parsing_table(g):
     # 2. State i is constructed from Ii.
     # (They are encoded as the indices of 'can'.)􏰋
     # The parsing actions for state i are deter mined as follows:
+    print("##########")
     for state_l, l in enumerate(can):
         for i, item in enumerate(l):
             lhs = item[0]
@@ -135,7 +158,7 @@ def slr_parsing_table(g):
                 #      and GOTO(Ii, a) = Ij then
                 #        set ACTION[i,􏰥a] =􏰙shift j.
                 #      Here a must be a terminal.􏰋
-
+                pass
                 # Do your magic here!
                 
             else:
@@ -144,7 +167,7 @@ def slr_parsing_table(g):
                 # all a in FOLLOW(A); here A may not be S'.
                 # (c) If [S' -> S *] is in Ii, then set
                 # ACTION[i, $] = "accept".
-
+                pass
                 # Do your magic here!
                 
         # 3. The goto transitions for state i are constructed for all
