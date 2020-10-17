@@ -126,7 +126,7 @@ def slr_parsing_table(g):
     Computes SLR parsing table according to Dragon 2nd ed. pgs 253, 254.
     '''
     # Grammar g is assumed to augmented.
-    assert(g.follow_computed)
+    #assert(g.follow_computed) -> Professor autorizou remover essa linha no classroom
     # 1. Construct C = {I0, I1, ... In},􏰉 the collection of sets of LR(0)
     # items for G.
     can = canonical_items(g)
@@ -146,20 +146,22 @@ def slr_parsing_table(g):
     # 2. State i is constructed from Ii.
     # (They are encoded as the indices of 'can'.)􏰋
     # The parsing actions for state i are deter mined as follows:
-    print("##########")
     for state_l, l in enumerate(can):
         for i, item in enumerate(l):
             lhs = item[0]
             rhs = item[1]
             dot_idx = item[2]
             if dot_idx < len(rhs):
-                a = rhs[dot_idx]
                 # (a)􏰈 If 􏰧[A -> alpha * a beta]􏰂is in Ii
                 #      and GOTO(Ii, a) = Ij then
                 #        set ACTION[i,􏰥a] =􏰙shift j.
                 #      Here a must be a terminal.􏰋
-                pass
-                # Do your magic here!
+                a = rhs[dot_idx]
+                if a in g.terminals:
+                    goto_result = goto(l, a, g)
+                    if goto_result in can:
+                        j = can.index(goto_result)
+                        action_tab[state_l][a].append(('shift', j))
                 
             else:
                 # (b) If [A -> alpha *] is in Ii, then set
@@ -167,15 +169,22 @@ def slr_parsing_table(g):
                 # all a in FOLLOW(A); here A may not be S'.
                 # (c) If [S' -> S *] is in Ii, then set
                 # ACTION[i, $] = "accept".
-                pass
-                # Do your magic here!
+                if lhs != g.start_symbol:
+                    follow_A = g.follow_tab[lhs]
+                    for a in follow_A:
+                        action_tab[state_l][a].append(("reduce", (lhs, rhs)))
+                else:
+                    action_tab[state_l]['$'].append(("accept",))
                 
         # 3. The goto transitions for state i are constructed for all
         # nonterminals A using the rule􏰗 If GOTO(Ii, A) = Ij 􏰉
         # then GOTO[i,􏰥A] = j.􏰋
+            goto_result = goto(l, lhs, g)
+            if goto_result in can:
+                j = can.index(goto_result)
+                if j not in goto_tab[state_l][lhs]:
+                    goto_tab[state_l][lhs].append(j)
 
-                # Do your magic here!
-                
     return (action_tab, goto_tab)
 
 def print_slr_table(act_tb, goto_tb):
