@@ -65,14 +65,13 @@ class Grammar:
                 self.print_production(s, rhs)
 
     def compute_first(self):
-         while True:
+        while True:
             first_size = self.first_tab_size()
             for s in self.getSymbols():
                 self.first(s)
             new_first_size = self.first_tab_size()
             if first_size == new_first_size:
                 break
-
         self.first_computed = True
             
     def firstW(self, w):
@@ -172,7 +171,7 @@ class Grammar:
     def print_first(self):
         self.pp.pprint(self.first_tab)
 
-     def first_tab_size(self):
+    def first_tab_size(self):
         return self.tab_size(self.first_tab)
 
     def first_log(self, symb, first, rhs):
