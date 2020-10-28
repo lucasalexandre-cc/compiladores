@@ -19,14 +19,14 @@ class TestImpGrammar(unittest.TestCase):
         Escreva um programa Imp examples/cmd-test0.imp2 que tenha a árvore sintática dada
         pela string passada como segundo parâmetro de __test_parse.
         '''
-        self.__test_parse('examples/cmd-test0.imp2', "{'ds': {'d': {'op': 'var', 'idn': ['x', 'y'], 'e': ['10', '1']}}, 'cs': {'ac': [{'op': 'while', 't': {'e': {'e1': 'x', 'op': '>', 'e2': '0'}}, 'b': {'ds': [], 'cs': {'ac': [{'idn': 'y', 'op': ':=', 'e': {'e1': 'y', 'op': '*', 'e2': 'x'}}, {'idn': 'x', 'op': ':=', 'e': {'e1': 'x', 'op': '-', 'e2': '1'}}]}}}, {'op': 'print', 'e': {'e': 'y'}}]}}")
+        self.__test_parse('examples/cmd-test0.imp2', "AST({'ds': AST({'d': AST({'op': 'var', 'idn': ['x', 'y'], 'e': ['10', '1']})}), 'cs': AST({'ac': [AST({'op': 'while', 't': AST({'e': AST({'e1': 'x', 'op': '>', 'e2': '0'})}), 'b': AST({'ds': [], 'cs': AST({'ac': [AST({'idn': 'y', 'op': ':=', 'e': AST({'e1': 'y', 'op': '*', 'e2': 'x'})}), AST({'idn': 'x', 'op': ':=', 'e': AST({'e1': 'x', 'op': '-', 'e2': '1'})})]})})}), AST({'op': 'print', 'e': AST({'e': 'y'})})]})})")
 
     def test_cmd_parse1(self):
         '''
         Escreva um programa Imp examples/cmd-test1.imp2 que tenha a árvore sintática dada
         pela string passada como segundo parâmetro de __test_parse.
         '''
-        self.__test_parse('examples/cmd-test1.imp2',"{'ds': {'d': {'op': 'var', 'idn': ['x', 'y', 'z'], 'e': ['1', '0', '0']}}, 'cs': {'ac': [{'idn': 'x', 'op': ':=', 'e': '0'}, {'idn': 'y', 'op': ':=', 'e': '1'}, {'idn': 'z', 'op': ':=', 'e': '3'}, {'op': 'if', 't': {'e': {'e1': 'x', 'op': '<', 'e2': '2'}}, 'b1': {'ds': [], 'cs': {'ac': {'idn': 'z', 'op': ':=', 'e': '3'}}}}, {'op': 'print', 'e': {'e': 'z'}}]}}")
+        self.__test_parse('examples/cmd-test1.imp2',"AST({'ds': AST({'d': AST({'op': 'var', 'idn': ['x', 'y', 'z'], 'e': ['1', '0', '0']})}), 'cs': AST({'ac': [AST({'idn': 'x', 'op': ':=', 'e': '0'}), AST({'idn': 'y', 'op': ':=', 'e': '1'}), AST({'idn': 'z', 'op': ':=', 'e': '3'}), AST({'op': 'if', 't': AST({'e': AST({'e1': 'x', 'op': '<', 'e2': '2'})}), 'b1': AST({'ds': [], 'cs': AST({'ac': AST({'idn': 'z', 'op': ':=', 'e': '3'})})})}), AST({'op': 'print', 'e': AST({'e': 'z'})})]})})")
         
 if __name__ == '__main__':
     unittest.main()
