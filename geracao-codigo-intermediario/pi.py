@@ -142,6 +142,30 @@ class Exp(Statement):
 class ArithExp(Exp):
     pass
 
+class Array(Exp):
+    def __init__(self, n):
+        if isinstance(n, list):
+            Exp.__init__(self, n)
+        else:
+            Exp.__init__(self, [n])
+    
+    def value(self):
+        return self.operand(0)
+
+class ArrayProjection(ArithExp):
+    def __init__(self, idn, i):
+        if isinstance(idn, Id):
+            Exp.__init__(self, idn, i)
+        else:
+            raise IllFormed(self, idn, i)
+
+class ArraySize(ArithExp):
+    def __init__(self, idn):
+        if isinstance(idn, Id):
+            Exp.__init__(self, idn)
+        else:
+            raise IllFormed(self, idn)
+
 class Num(ArithExp):
     def __init__(self, n):
         if isinstance(n, int):
@@ -156,6 +180,11 @@ class Num(ArithExp):
             ret = str(self.num())
         return ret
 
+    def __eq__(self, other):
+        if isinstance(other, Num):
+            return self.num() == other.num()
+        elif isinstance(other, int):
+            return self.num() == other
         
     def num(self):
         return self.operand(0)
@@ -318,6 +347,13 @@ class ExpKW():
     OR = "#OR"
     NOT = "#NOT"
 
+class ExpArray():
+    ARRAY_PROJECTION = "#ARRAY_PROJECTION"
+    ARRAY_ASSIGN = "#ARRAY_ASSIGN"
+    ARRAY_APPEND = "#ARRAY_APPEND"
+    ARRAY_CONCAT = "#ARRAY_CONCAT"
+    ARRAY_SIZE = "#ARRAY_SIZE"
+
 class ExpPiAut(PiAutomaton):
 
     def __evalSum(self, e):
@@ -400,6 +436,21 @@ class ExpPiAut(PiAutomaton):
         f = n.num()
         self.pushVal(f)
 
+    def __evalArray(self, n):
+        f = n.value()
+        self.pushVal(f)
+
+    def __evalArrayProjection(self, e):
+        e1 = e.left_operand()
+        e2 = e.right_operand()
+        self.pushCnt(ExpArray.ARRAY_PROJECTION)
+        self.pushCnt(e1)
+        self.pushCnt(e2)
+
+    def __evalArraySize(self, e):
+        idn = e.operand(0)
+        self.pushCnt(ExpArray.ARRAY_SIZE)
+        self.pushCnt(idn)
 
     def __evalBoo(self, t):
         th = t.boo()
@@ -534,11 +585,26 @@ class ExpPiAut(PiAutomaton):
         v = self.popVal()
         self.pushVal(not v)
 
+    def __evalArrayProjectionKW(self):
+        v1 = self.popVal()
+        v2 = self.popVal()
+        self.pushVal(v1[v2])
+    
+    def __evalArraySizeKW(self):
+        array = self.popVal()
+        array_length = len(array)
+        self.pushVal(array_length)
 
     def eval(self):
         e = self.popCnt()
         if isinstance(e, Sum):
             self.__evalSum(e)
+        elif isinstance(e, Array):
+            self.__evalArray(e)
+        elif isinstance(e, ArrayProjection):
+            self.__evalArrayProjection(e)
+        elif isinstance(e, ArraySize):
+            self.__evalArraySize(e)
         elif e == ExpKW.SUM:
             self.__evalSumKW(e)
         elif isinstance(e, Sub):
@@ -589,6 +655,10 @@ class ExpPiAut(PiAutomaton):
             self.__evalNot(e)
         elif e == ExpKW.NOT:
             self.__evalNotKW()
+        elif e == ExpArray.ARRAY_PROJECTION:
+            self.__evalArrayProjectionKW()
+        elif e == ExpArray.ARRAY_SIZE:
+            self.__evalArraySizeKW()
         else:
             raise EvaluationError( \
                 "Don't know how to evaluate " + str(e) + " of type " + str(type(e)) + "." + \
@@ -699,6 +769,27 @@ class CSeq(Cmd):
 
     def right_cmd(self):
         return self.operand(1)
+
+class ArrayAssign(Cmd):
+    def __init__(self, idn, i, e):
+        if isinstance(idn, Id):
+            Cmd.__init__(self, idn, i, e)
+        else:
+            raise IllFormed(self, e)
+
+class ArrayAppend(Cmd):
+    def __init__(self, idn, e):
+        if isinstance(idn, Id):
+            Cmd.__init__(self, idn, e)
+        else:
+            raise IllFormed(self, idn)
+
+class ArrayConcat(Cmd):
+    def __init__(self, idn, e):
+        if isinstance(idn, Id):
+            Cmd.__init__(self, idn, e)
+        else:
+            raise IllFormed(self, idn)
 
 class Env(dict):
     pass
@@ -839,11 +930,70 @@ class CmdPiAut(ExpPiAut):
         self.pushCnt(c2)
         self.pushCnt(c1)
 
+    def __evalArrayAssign(self, c):
+        idn = c.operand(0)
+        index = c.operand(1)
+        value = c.operand(2)
+        self.pushVal(idn.id())
+        self.pushCnt(ExpArray.ARRAY_ASSIGN)
+        self.pushCnt(index)
+        self.pushCnt(value)
+        self.pushCnt(idn)
+
+    def __evalArrayAssignKw(self):
+        index = self.popVal()
+        value = self.popVal()
+        array = self.popVal()
+        array[index] = value
+
+        i = self.popVal()
+        l = self.getBindable(i)
+        self.updateStore(l, array)
+
+    def __evalArrayAppend(self, c):
+        idn = c.operand(0)
+        e = c.operand(1)
+        self.pushVal(idn.id())
+        self.pushCnt(ExpArray.ARRAY_APPEND)
+        self.pushCnt(idn)
+        self.pushCnt(e)
+
+    def __evalArrayAppendKw(self):
+        array = self.popVal()
+        new_value = self.popVal()
+        array.append(new_value)
+
+        i = self.popVal()
+        l = self.getBindable(i)
+        self.updateStore(l, array)
+
+    def __evalArrayConcat(self, c):
+        idn = c.operand(0)
+        e = c.operand(1)
+        self.pushVal(idn.id())
+        self.pushCnt(ExpArray.ARRAY_CONCAT)
+        self.pushCnt(idn)
+        self.pushCnt(e)
+
+    def __evalArrayConcatKw(self):
+        array = self.popVal()
+        array_to_concat = self.popVal()
+        new_array = array + array_to_concat
+
+        i = self.popVal()
+        l = self.getBindable(i)
+        self.updateStore(l, new_array)
 
     def eval(self):
         c = self.popCnt()
         if isinstance(c, Print):
             self.__evalPrint(c)
+        elif isinstance(c, ArrayAssign):
+            self.__evalArrayAssign(c)
+        elif isinstance(c, ArrayAppend):
+            self.__evalArrayAppend(c)
+        elif isinstance(c, ArrayConcat):
+            self.__evalArrayConcat(c)
         elif c == CmdKW.PRINT:
             self.__evalPrintKW()
         elif isinstance(c, Assign):
@@ -864,6 +1014,12 @@ class CmdPiAut(ExpPiAut):
             self.__evalLoopKW()
         elif isinstance(c, CSeq):
             self.__evalCSeq(c)
+        elif c == ExpArray.ARRAY_ASSIGN:
+            self.__evalArrayAssignKw()
+        elif c == ExpArray.ARRAY_APPEND:
+            self.__evalArrayAppendKw()
+        elif c == ExpArray.ARRAY_CONCAT:
+            self.__evalArrayConcatKw()
         else:
             self.pushCnt(c)
             super().eval()

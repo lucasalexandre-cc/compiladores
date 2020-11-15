@@ -1,0 +1,19 @@
+var x = [54,26,93,17,77,31,44,55,20], i = 0;
+
+while(i < len(x)) {
+  var j = 0;
+
+  while(j < len(x) - 1) {
+    if(x[j+1] < x[j]) {
+      var aux = x[j];
+      x[j] := x[j+1];
+      x[j+1] := aux
+    };
+
+    j := j + 1
+  };
+
+  i := i + 1
+};
+
+print(x)
