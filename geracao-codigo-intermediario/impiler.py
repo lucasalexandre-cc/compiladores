@@ -5,6 +5,24 @@ import pi
 from tatsu import ast
 
 class Impiler(object):
+    def array(self, ast):
+        return pi.Array(ast.n)
+
+    def array_projection(self, ast):
+        return pi.ArrayProjection(ast.idn, ast.i)
+
+    def array_assign(self, ast):
+        return pi.ArrayAssign(ast.idn, ast.i, ast.e)
+
+    def array_append(self, ast):
+        return pi.ArrayAppend(ast.idn, ast.e)
+
+    def array_concat(self, ast):
+        return pi.ArrayConcat(ast.idn, ast.e)
+
+    def array_size(self, ast):
+        return pi.ArraySize(ast.idn)
+
     def paren_exp(self, ast):
         return ast.e
     

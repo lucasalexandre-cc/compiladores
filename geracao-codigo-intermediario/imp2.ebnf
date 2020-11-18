@@ -26,7 +26,13 @@
 
 start = [ds:decSeq] [cs:cmd_seq] $ ;
 
-exp = paren_exp | bin_exp | un_exp | @:atom ;
+exp = paren_exp | bin_exp | un_exp | array | array_projection | array_size | @:atom  ;
+
+array = "[" ","%{ n:exp }+ "]" ;
+
+array_projection = idn:identifier "[" i:exp "]" ;
+
+array_size = "len" "(" idn:identifier ")";
 
 paren_exp = "(" e:exp ")" ;
 
@@ -56,7 +62,13 @@ blk = "{" ds:decSeq cs:cmd_seq "}" ;
 
 cmd_seq = ";"%{ac:atom_cmd}+ ;
 
-atom_cmd = cond | loop | assign | print | call | skip ;
+atom_cmd = cond | loop | assign | print | call | skip | array_assign | array_append | array_concat ;
+
+array_assign = idn:identifier "[" i:exp "]" ":=" e:exp ;
+
+array_append = idn:identifier "+" e:exp ;
+
+array_concat = idn:identifier "++" e:identifier | idn:identifier "++" e:array ;
 
 skip = "skip" ;
 
