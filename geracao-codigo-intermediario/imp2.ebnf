@@ -68,7 +68,7 @@ array_assign = idn:identifier "[" i:exp "]" ":=" e:exp ;
 
 array_append = idn:identifier "+" e:exp ;
 
-array_concat = idn:identifier "++" e:exp ;
+array_concat = idn:identifier "++" e:identifier | idn:identifier "++" e:array ;
 
 skip = "skip" ;
 
