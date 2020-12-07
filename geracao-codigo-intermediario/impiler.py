@@ -5,6 +5,12 @@ import pi
 from tatsu import ast
 
 class Impiler(object):
+    def ret(self, ast):
+        return pi.Return(ast.e)
+
+    def go_to_ret(self, ast):
+        return pi.GoToRet()    
+
     def array(self, ast):
         return pi.Array(ast.n)
 
@@ -169,3 +175,7 @@ class Impiler(object):
     def call(self, ast):
         actuals = [e for e in ast.a if e != ',']
         return pi.Call(ast.idn, actuals)
+    
+    def call_exp(self, ast):
+        actuals = [e for e in ast.a if e != ',']
+        return pi.CallExp(ast.idn, actuals)

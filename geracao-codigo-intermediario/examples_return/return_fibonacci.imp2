@@ -1,0 +1,20 @@
+def fib(n) {
+  var result = [0, 1], x = 0, y = 1, interactions = n - 2;
+
+  while(True) {
+    var aux = 0;
+    if(interactions <= 0) {
+      go_to_ret
+    };
+
+    aux := x;
+    x := y;
+    y := y + aux;
+    result + y;
+    interactions := interactions - 1
+  };
+
+  return result
+}
+
+print(fib(6))

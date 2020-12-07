@@ -1,0 +1,15 @@
+def calculate_investment(value) {
+  var after_investiment_value = 0;
+  
+  if(value > 3000) {
+    after_investiment_value := value * 3;
+    go_to_ret
+  };
+
+  after_investiment_value := value * 2;
+
+  return after_investiment_value
+}
+
+print(calculate_investment(4000));
+print(calculate_investment(2000))

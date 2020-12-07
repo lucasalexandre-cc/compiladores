@@ -354,6 +354,10 @@ class ExpArray():
     ARRAY_CONCAT = "#ARRAY_CONCAT"
     ARRAY_SIZE = "#ARRAY_SIZE"
 
+class Fn():
+    RETURN = "#RETURN"
+    GO_TO_RETURN = "#GO_TO_RETURN"
+
 class ExpPiAut(PiAutomaton):
 
     def __evalSum(self, e):
@@ -598,7 +602,7 @@ class ExpPiAut(PiAutomaton):
     def eval(self):
         e = self.popCnt()
         if isinstance(e, Sum):
-            self.__evalSum(e)
+            self.__evalSum(e) 
         elif isinstance(e, Array):
             self.__evalArray(e)
         elif isinstance(e, ArrayProjection):
@@ -686,7 +690,6 @@ class Id(ArithExp, BoolExp):
 
 
 class Print(Cmd):
-
     def __init__(self, e):
         if isinstance(e, Exp):
             Cmd.__init__(self, e)
@@ -784,6 +787,13 @@ class ArrayAppend(Cmd):
         else:
             raise IllFormed(self, idn)
 
+class Return(Cmd):
+    def __init__(self, e):
+        Cmd.__init__(self, e)
+
+class GoToRet(Cmd):
+    pass
+
 class ArrayConcat(Cmd):
     def __init__(self, idn, e):
         if isinstance(idn, Id):
@@ -865,6 +875,14 @@ class CmdPiAut(ExpPiAut):
     def __evalPrintKW(self):
         v = self.popVal()
         self.__emmit(v)
+
+    def __evalGoToRet(self):
+        self.pushCnt(Fn.GO_TO_RETURN)
+
+    def __evalReturn(self, c):
+        exp = c.operand(0)
+        self.pushCnt(Fn.RETURN)
+        self.pushCnt(exp)
         
     def __evalAssign(self, c):
         i = c.lvalue()
@@ -982,12 +1000,49 @@ class CmdPiAut(ExpPiAut):
 
         i = self.popVal()
         l = self.getBindable(i)
-        self.updateStore(l, new_array)
+        self.updateStore(l, new_array)    
 
+    def __evalReturnKw(self):
+        result = self.popVal()
+    
+        blk_cmd_log = []
+        val_log = []
+
+        current_cnt = self.popCnt()
+        while(current_cnt == DecCmdKW.BLKCMD):
+            blk_cmd_log.append(current_cnt)
+            env = self.popVal()
+            ls = self.popVal()
+            val_log.append(env)
+            val_log.append(ls)
+            current_cnt = self.popCnt()
+            if current_cnt != DecCmdKW.BLKCMD:
+                self.pushCnt(current_cnt)
+            
+        self.pushVal(result)
+        for val in val_log[::-1]:
+            self.pushVal(val)
+        for blk_cmd in blk_cmd_log:
+            self.pushCnt(blk_cmd)
+
+    def __evalGoToReturnKw(self):
+        c = self.popCnt()
+        while(not isinstance(c, Return)):
+            if c == DecCmdKW.BLKCMD:
+                self.pushCnt(Fn.GO_TO_RETURN)
+                self.pushCnt(c)
+                return
+            c = self.popCnt() 
+        self.pushCnt(c)
+        
     def eval(self):
         c = self.popCnt()
         if isinstance(c, Print):
             self.__evalPrint(c)
+        elif isinstance(c, GoToRet):
+            self.__evalGoToRet()
+        elif isinstance(c, Return):
+            self.__evalReturn(c)    
         elif isinstance(c, ArrayAssign):
             self.__evalArrayAssign(c)
         elif isinstance(c, ArrayAppend):
@@ -1020,6 +1075,10 @@ class CmdPiAut(ExpPiAut):
             self.__evalArrayAppendKw()
         elif c == ExpArray.ARRAY_CONCAT:
             self.__evalArrayConcatKw()
+        elif c == Fn.RETURN:
+            self.__evalReturnKw()
+        elif c == Fn.GO_TO_RETURN:
+            self.__evalGoToReturnKw()    
         else:
             self.pushCnt(c)
             super().eval()
@@ -1241,7 +1300,7 @@ class DecPiAut(CmdPiAut):
         self["sto"] = s
         # Retrieves the locations prior to the start of the execution of the block.
         ls = self.popVal()
-        self["locs"] = ls            
+        self["locs"] = ls
 
     def eval(self):
         d = self.popCnt()
@@ -1326,6 +1385,22 @@ class Call(Cmd):
         if isinstance(f, Id):
             if isinstance(actuals, list):
                 Cmd.__init__(self, f, actuals)
+            else:
+                raise IllFormed(self, actuals)
+        else:
+            raise IllFormed(self, f)
+
+    def caller(self):
+        return self.operand(0)
+
+    def actuals(self):
+        return self.operand(1)
+
+class CallExp(Exp):
+    def __init__(self, f, actuals):
+        if isinstance(f, Id):
+            if isinstance(actuals, list):
+                Exp.__init__(self, f, actuals)
             else:
                 raise IllFormed(self, actuals)
         else:
@@ -1488,7 +1563,7 @@ class AbsPiAut(DecPiAut):
         d = self.popCnt()
         if isinstance(d, Abs):
             self.__evalAbs(d)
-        elif isinstance(d, Call):
+        elif isinstance(d, Call) or isinstance(d, CallExp):
             self.pushCnt(CallKW.CALL)
             for a in d.actuals():
                 self.pushCnt(a)
@@ -1635,7 +1710,7 @@ class RecPiAut(AbsPiAut):
             self.pushCnt(BindAbs(c.id(), c.bindable()))
         elif c == RecKW.REC:
             self.__evalRecKW()
-        elif isinstance(c, Call):
+        elif isinstance(c, Call) or isinstance(c, CallExp):
             caller = c.caller()
             env = self.env()
             if caller.id() in env.keys():

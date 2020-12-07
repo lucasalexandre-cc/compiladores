@@ -1,0 +1,14 @@
+def return_inside_while(n) {
+  var result = n;
+
+  while(True) {
+    result := result + 1;
+    if(result >= 100) {
+      go_to_ret
+    }
+  };
+
+  return result
+}
+
+print(return_inside_while(50))

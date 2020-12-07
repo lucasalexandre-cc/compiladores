@@ -1,0 +1,15 @@
+def fat(n) {
+  var result = 1, aux = n;
+  while(True) {
+    if(aux == 0) {
+      go_to_ret
+    };
+
+    result := result * aux;
+    aux := aux - 1
+  };
+
+  return result
+}
+
+print(fat(5))

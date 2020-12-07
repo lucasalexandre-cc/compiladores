@@ -1,0 +1,17 @@
+rec f(n) {
+  var result = 0;
+
+  if(n == 1) {
+    result := 1;
+    go_to_ret
+  };
+
+  if(n > 1) {
+    result := f(n - 1) * n;
+    go_to_ret
+  };
+
+  return result
+}
+
+f(2)
